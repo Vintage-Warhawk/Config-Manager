@@ -1,4 +1,4 @@
-local cfgm_version = 20190415
+local cfgm_version = 20190416
 
 if CFGM then
 	if CFGM.Version <= cfgm_version then
@@ -63,7 +63,7 @@ function CFGM:LoadCFG()
 	for _, line in ipairs( data ) do
 		local args = string.Split( line, ";" )
 		local name = args[1]
-		if !name or !CFGM.Registry[name] then return end
+		if !name then return end
 		local value = args[3]
 		if !value then return end
 		if value == "true" or value == "false" then
@@ -73,16 +73,20 @@ function CFGM:LoadCFG()
 				value = tonumber(value)
 			end
 		end
-		self:Set( name, value )
+		if self.Registry[name] then
+			self:Set( name, value )
+		else
+			self:Register( name, args[4], value, args[2] )
+		end
 	end
 end
 
 function CFGM:Get( name )
-	return CFGM.Registry[name].value
+	return self.Registry[name].value
 end
 
 function CFGM:Set( name, value )
-	if type( value ) == CFGM.Registry[name].datatype then
+	if type( value ) == self.Registry[name].datatype then
 		CFGM.Registry[name].value = value
 		hook.Call( "CFGM_ConfigUpdated", {}, name, value )
 		self:Msg( "Set " .. name .. " to " .. tostring(value) .. "." )
@@ -92,14 +96,15 @@ function CFGM:Set( name, value )
 end
 
 function CFGM:Register( name, datatype, fallback, description )
+	if self.Registry[name] then return end
+
 	if table.HasValue( SupportedTypes, datatype ) then
 		if type( fallback ) == datatype then
-			CFGM.Registry[name] = {
+			self.Registry[name] = {
 				value = fallback,
 				datatype = datatype,
 				description = description or "No description given."
 			}
-			self:LoadCFG()
 		else
 			self:Msg( "Fallback datatype mismatch." )
 		end
@@ -202,6 +207,17 @@ if CLIENT then
 			surface.DrawRect( 0, 0, w, h )
 		end
 
+		local vrs = vgui.Create( "DLabel", frm )
+			vrs:SetPos( 5, 5 )
+			vrs:SetSize( 100, 25 )
+			vrs:SetText( "configmanager\n" .. CFGM.Version )
+			vrs:SetTextColor( Color( 125, 125, 125 ) )
+			vrs:SetMouseInputEnabled( true )
+
+		function vrs:DoClick()
+			gui.OpenURL( "https://github.com/Vintage-Warhawk/Config-Manager" ) 
+		end
+
 		local cls = vgui.Create( "DButton", frm )
 			cls:SetSize( 60, 40 )
 			cls:SetPos( frmW - 65, 5 )
@@ -265,10 +281,19 @@ if CLIENT then
 			SelectIndicator( 0, h - 10, w, 10, Color( 0, 0, 0 ) )
 
 			if self:IsHovered() then
-				surface.SetDrawColor( 25, 25, 255, 25 )
-				self.tempalpha = 25
+				if CFGM:HasAccess() then
+					surface.SetDrawColor( 25, 25, 255, 25 )
+					self.tempalpha = 25
+				else
+					surface.SetDrawColor( 255, 25, 25, 25 )
+					self.tempalpha = 25
+				end
 			else
-				surface.SetDrawColor( 25, 25, 255, self.tempalpha )
+				if CFGM:HasAccess() then
+					surface.SetDrawColor( 25, 25, 255, self.tempalpha )
+				else
+					surface.SetDrawColor( 255, 25, 25, self.tempalpha )
+				end
 				if self.tempalpha != 0 then
 					self.tempalpha = self.tempalpha - 1
 				end
@@ -281,10 +306,6 @@ if CLIENT then
 			end
 
 			draw.SimpleText( "Admin", "Trebuchet24", w/2, h/2.5, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
-		end
-
-		function cls:DoClick()
-			frm:Close()
 		end
 
 		local body = vgui.Create( "DPanel", frm )
