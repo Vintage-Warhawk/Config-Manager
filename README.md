@@ -36,4 +36,5 @@ In console type the following to open the menu.
 ```
 ConfigManager
 ```
-![Work in progress](https://i.ibb.co/kBsTdqP/3678a2ac1a2e57dd45c747ffe859d8e3-png.jpg)
+WIP but functional.
+![](https://i.ibb.co/kBsTdqP/3678a2ac1a2e57dd45c747ffe859d8e3-png.jpg)
