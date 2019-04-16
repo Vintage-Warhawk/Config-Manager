@@ -9,6 +9,7 @@ How to register, set, and get configuration options.
 ### Registering your configuration option.
 
 You can run this code in CLIENT for user configuration, or run it in SERVER for admin configuration.
+The available datatypes are "string", "number", "boolean"
 
 ```
 CFGM:Register( name, datatype, fallback, description )
